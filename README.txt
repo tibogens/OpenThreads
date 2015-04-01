@@ -1,8 +1,3 @@
-# OpenThreads
-
-*Note: this is a fork of the official OpenSceneGraph SVN repo at version 3.3.6. 
-It is not meant to be kept up-to-date, but OpenThreads is a very mature and
-robust library and does not change often.*
 
 This library is intended to provide a minimal & complete Object-Oriented (OO) 
 thread interface for C++ programmers.  It is loosely modeled on the Java thread
