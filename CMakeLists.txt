@@ -1,13 +1,4 @@
-IF(WIN32)
-    CMAKE_MINIMUM_REQUIRED(VERSION 2.4.6 FATAL_ERROR)
-ELSE(WIN32)
-    IF(APPLE)
-        CMAKE_MINIMUM_REQUIRED(VERSION 2.4.6 FATAL_ERROR)
-    ELSE(APPLE)
-        CMAKE_MINIMUM_REQUIRED(VERSION 2.4.0 FATAL_ERROR)
-    ENDIF(APPLE)
-ENDIF(WIN32)
-
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6.0 FATAL_ERROR)
 
 PROJECT(OpenThreads)
 
@@ -52,9 +43,6 @@ INCLUDE_DIRECTORIES(
     ${OpenThreads_SOURCE_DIR}/include
 )
 
-# This is mainly for Windows declspec, but other platforms know
-# what to do with it.
-ADD_DEFINITIONS(-DOPENTHREADS_EXPORTS)
 
 # User Options
 OPTION(DYNAMIC_OPENTHREADS "Set to ON to build OpenThreads for dynamic linking.  Use OFF for static." ON)
@@ -69,19 +57,9 @@ FIND_PACKAGE(Threads)
 
 SUBDIRS(src/OpenThreads examples)
 
-# FIXME: Make optional install test programs
-# FIXME: /bin directory not correct for Windows
-# INSTALL_TARGETS(/bin OpenThreads)
- 
-#SET(OUTPUT_BINDIR ${PROJECT_BINARY_DIR}/bin/${CMAKE_SYSTEM_NAME})
-SET(OUTPUT_BINDIR ${PROJECT_BINARY_DIR}/bin)
-MAKE_DIRECTORY(${OUTPUT_BINDIR})
-SET(EXECUTABLE_OUTPUT_PATH ${OUTPUT_BINDIR})
-
-#SET(OUTPUT_LIBDIR ${PROJECT_BINARY_DIR}/lib/${CMAKE_SYSTEM_NAME})
-SET(OUTPUT_LIBDIR ${PROJECT_BINARY_DIR}/lib)
-MAKE_DIRECTORY(${OUTPUT_LIBDIR})
-SET(LIBRARY_OUTPUT_PATH ${OUTPUT_LIBDIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 ################################################################################
 # Create bin and lib directories if required
