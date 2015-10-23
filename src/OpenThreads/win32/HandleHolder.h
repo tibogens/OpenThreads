@@ -13,9 +13,10 @@
 
 //
 //
-// Win32BarrierPrivateData.h - private data structure for barrier
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// HandleHolder.h - Class that holds win32 HANDLES ensuring proper destruction
+// ~~~~~~~~~~~~~~
 //
+
 #ifndef _HandleHolder_H_
 #define _HandleHolder_H_
 
