@@ -66,6 +66,7 @@ SET(OpenThreads_PUBLIC_HEADERS
 )
 SET(OpenThreads_COMMON_SOURCE
 	${CMAKE_CURRENT_SOURCE_DIR}/common/Atomic.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/common/ThreadPool.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/common/Version.cpp
 )
 
