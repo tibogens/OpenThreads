@@ -2,9 +2,9 @@ TOPDIR = ../../.
 include $(TOPDIR)/Make/makedefs 
 
 C++FILES =\
-	ThreadObserver.c++ \
-	ThreadReporter.c++ \
-	WorkCrew.c++ \
+	ThreadObserver.cpp \
+	ThreadReporter.cpp \
+	WorkCrew.cpp \
 	$(NULL)
 
 INC      += -I$(TOPDIR)/include -I.
