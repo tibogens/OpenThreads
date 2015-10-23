@@ -24,8 +24,7 @@ ADD_LIBRARY(${LIB_NAME}
     QtMutex.cpp
     QtCondition.cpp
     QtBarrier.cpp
-    ../common/Version.cpp
-    ../common/Atomic.cpp
+	${OpenThreads_COMMON_SOURCE}
     ${QTCLASS_MOC}
     ${OPENTHREADS_VERSIONINFO_RC}
 )

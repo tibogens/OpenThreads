@@ -60,8 +60,13 @@ SET(OpenThreads_PUBLIC_HEADERS
     ${HEADER_PATH}/ReentrantMutex
     ${HEADER_PATH}/ScopedLock
     ${HEADER_PATH}/Thread
+    ${HEADER_PATH}/ThreadPool
     ${OPENTHREADS_VERSION_HEADER}
     ${OPENTHREADS_CONFIG_HEADER}
+)
+SET(OpenThreads_COMMON_SOURCE
+	${CMAKE_CURRENT_SOURCE_DIR}/common/Atomic.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/common/Version.cpp
 )
 
 IF(NOT ANDROID)

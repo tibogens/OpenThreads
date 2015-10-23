@@ -17,8 +17,7 @@ SET(TARGET_SRC
     PThreadMutex.cpp
     PThreadMutexPrivateData.h
     PThreadPrivateData.h
-    ../common/Version.cpp
-    ../common/Atomic.cpp
+	${OpenThreads_COMMON_SOURCE}
 )
 IF(ANDROID)
       ADD_DEFINITIONS(-D_GNU_SOURCE)

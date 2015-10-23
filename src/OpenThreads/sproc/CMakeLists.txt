@@ -17,8 +17,7 @@ ADD_LIBRARY(${LIB_NAME}
     SprocThread.c++
     SprocThreadPrivateActions.h
     SprocThreadPrivateData.h
-    ../common/Version.cpp
-    ../common/Atomic.cpp
+	${OpenThreads_COMMON_SOURCE}
 )
 
 IF(OPENTHREADS_SONAMES)
