@@ -21,16 +21,85 @@
 #define _OPENTHREADS_THREADPOOL_
 
 #include <OpenThreads/Thread>
+#include <OpenThreads/Condition>
+#include <map>
+#include <list>
+
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4251 )
+#endif
 
 namespace OpenThreads {
 
+class OPENTHREAD_EXPORT_DIRECTIVE ThreadPool;
+
+class OPENTHREAD_EXPORT_DIRECTIVE WorkerThread : public Thread {
+
+public:
+
+	WorkerThread();
+	virtual ~WorkerThread();
+
+	void queue(void* task);
+
+	void run();
+
+	void stop(bool finishTasks);
+
+protected:
+	virtual void init() {}
+	virtual void executeTask(void* task) {}
+
+protected:
+	Condition _condition;
+	Mutex _mutex;
+
+	typedef std::list<void*> Tasks;
+	Tasks _tasks;
+
+	enum Flag
+	{
+		STOPPING			= 1,
+		STOP_AFTER_TASKS	= 2,
+	};
+
+private:
+	friend class ThreadPool;
+	void setPool(ThreadPool* pool);
+	ThreadPool* _pool;
+	unsigned int _flags;
+};
 
 class OPENTHREAD_EXPORT_DIRECTIVE ThreadPool {
 
 public:
 
+	ThreadPool();
+	virtual ~ThreadPool();
+
+	int add(WorkerThread* worker);
+	void stop();
+
+private:
+	bool _stopping;
+	Mutex _mutex;
+
+	typedef std::map<int, WorkerThread*> Workers;
+	Workers _workers;
+
+	// Helper for stop()
+	static void waitForTermination(Workers& workers, unsigned int timeout);
+
+private:
+	friend class WorkerThread;
+	void workerEnded(WorkerThread* worker);
 };
 
 }
+
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
 
 #endif // !_OPENTHREADS_THREADPOOL_

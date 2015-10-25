@@ -351,6 +351,11 @@ public:
       */
     static int microSleep( unsigned int microsec);
 
+	/** getTickCount(), returns the millisecs since boot
+	  * (Not strictly thread API, see remark in microSleep()
+	*/
+	static unsigned int getTickCount();
+
 private:
 
     /**

@@ -669,6 +669,11 @@ int Thread::microSleep(unsigned int microsec)
 #endif
 }
 
+unsigned int Thread::getTickCount()
+{
+	return GetTickCount();
+}
+
 
 //-----------------------------------------------------------------------------
 //
