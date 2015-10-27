@@ -58,31 +58,40 @@ void WorkerThread::run()
 			while (_tasks.empty())
 				_condition.wait(&_mutex);
 
-			if ((_flags & STOPPING) == STOPPING && (_flags & STOP_AFTER_TASKS) == 0)
-				break;
+			if ((_flags & STOPPING) == STOPPING)
+			{
+				if ((_flags & STOP_AFTER_TASKS) == STOP_AFTER_TASKS)
+				{
+					// Stop when queue is empty
+					if (_tasks.empty())
+						break;
+				}
+				else
+					break; // Stop now
+			}
 
 			Tasks copy = _tasks;
 			_tasks.clear();
 
 			{
 				ReverseScopedLock<Mutex> sunlock(_mutex);
+				if (copy.size() > 1)
+					int breaker = 2;
 				for (Tasks::iterator it = copy.begin(); it != copy.end(); ++it)
 				{
 					if (*it != nullptr)
 						executeTask(*it);
 				}
 			}
-
-			if ((_flags & STOPPING) == STOPPING)
-				break;
 		}
 	}
 }
-
+#include <iostream>
 void WorkerThread::queue(void* task)
 {
 	ScopedLock<Mutex> slock(_mutex);
 	_tasks.push_back(task);
+	std::cout << "queued " << _tasks.size() << "th task" << std::endl;
 	_condition.signal();
 }
 
@@ -156,18 +165,25 @@ void ThreadPool::stop()
 		alive.swap(_workers);
 		all = alive;
 		for (Workers::iterator it = alive.begin(); it != alive.end(); ++it)
+		{
+			std::cout << "asking " << it->first << " to stop" << std::endl;
 			it->second->stop(true);
+		}
 	}
 
 	waitForTermination(alive, 3000);
 
 	for (Workers::iterator it = alive.begin(); it != alive.end(); ++it)
+	{
+		std::cout << "cancelling " << it->first << std::endl;
 		it->second->cancel();
+	}
 
 	waitForTermination(alive, 1000);
 
 	for (Workers::iterator it = alive.begin(); it != alive.end(); ++it)
 	{
+		std::cout << "killing " << it->first << std::endl;
 		it->second->setCancelModeAsynchronous();
 		it->second->cancel();
 	}
@@ -187,4 +203,5 @@ void ThreadPool::workerEnded(WorkerThread* worker)
 	assert(it == _workers.end() || it->second == worker);
 	//if (it != _workers.end())
 	//	_workers.erase(it);
+	std::cout << "Worker " << key << " ended.";
 }
