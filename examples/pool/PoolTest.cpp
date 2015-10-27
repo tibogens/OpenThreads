@@ -43,6 +43,8 @@ public:
 		std::cout << "Runing task " << task->num << std::endl;
 		OpenThreads::Thread::microSleep(1000000);
 		std::cout << "End of task " << task->num << std::endl;
+		if (task->num == 0)
+			queue(task);
 		OpenThreads::ScopedLock<OpenThreads::Mutex> slock(_s_mutex);
 		++_s_numTasksDone;
 	}
