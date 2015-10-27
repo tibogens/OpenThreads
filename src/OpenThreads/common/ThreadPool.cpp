@@ -15,6 +15,7 @@
 #include <OpenThreads/ScopedLock>
 #include <algorithm>
 #include <assert.h>
+//#include <iostream>
 using namespace OpenThreads;
 
 
@@ -53,45 +54,42 @@ void WorkerThread::run()
 
 	{
 		ScopedLock<Mutex> slock(_mutex);
-		while (1)
+		while (!shouldStop())
 		{
 			while (_tasks.empty())
 				_condition.wait(&_mutex);
 
-			if ((_flags & STOPPING) == STOPPING)
+			if (shouldStop())
+				break;
+
+			if (_tasks.size() == 1 && *(_tasks.begin()) == nullptr) 
 			{
-				if ((_flags & STOP_AFTER_TASKS) == STOP_AFTER_TASKS)
-				{
-					// Stop when queue is empty
-					if (_tasks.empty())
-						break;
-				}
-				else
-					break; // Stop now
+				// Take a shortcut if we're only performing a no-op
+				_tasks.clear();
 			}
-
-			Tasks copy = _tasks;
-			_tasks.clear();
-
+			else
 			{
-				ReverseScopedLock<Mutex> sunlock(_mutex);
-				if (copy.size() > 1)
-					int breaker = 2;
-				for (Tasks::iterator it = copy.begin(); it != copy.end(); ++it)
+				Tasks copy = _tasks;
+				_tasks.clear();
+
 				{
-					if (*it != nullptr)
-						executeTask(*it);
+					ReverseScopedLock<Mutex> sunlock(_mutex);
+					for (Tasks::iterator it = copy.begin(); it != copy.end(); ++it)
+					{
+						if (*it != nullptr)
+							executeTask(*it);
+					}
 				}
 			}
 		}
 	}
 }
-#include <iostream>
+
 void WorkerThread::queue(void* task)
 {
 	ScopedLock<Mutex> slock(_mutex);
 	_tasks.push_back(task);
-	std::cout << "queued " << _tasks.size() << "th task" << std::endl;
+	//std::cout << "queued " << _tasks.size() << "th task" << std::endl;
 	_condition.signal();
 }
 
@@ -102,6 +100,32 @@ void WorkerThread::stop(bool finishTasks)
 	_tasks.push_back(nullptr);
 	_condition.signal();
 }
+
+bool WorkerThread::shouldStop()
+{
+	if ((_flags & STOPPING) == STOPPING)
+	{
+		if ((_flags & STOP_AFTER_TASKS) == STOP_AFTER_TASKS)
+		{
+			// Stop when queue is empty
+			if (_tasks.empty())
+				return true;
+		}
+		else
+			return true; // Stop now
+	}
+
+	// Note: this throws if the cancel event is set. Therefore shouldStop()
+	// must be called with this in mind - in particular, don't hold a mutex
+	// without a proper RAII unlocking scheme.
+	// This can be annoying if we have to use thread killing after all timeouts.
+	int ret = testCancel();
+	assert(ret == 0);
+
+	return false;
+}
+
+
 
 ThreadPool::ThreadPool()
 	: _stopping(false)
@@ -166,7 +190,7 @@ void ThreadPool::stop()
 		all = alive;
 		for (Workers::iterator it = alive.begin(); it != alive.end(); ++it)
 		{
-			std::cout << "asking " << it->first << " to stop" << std::endl;
+			//std::cout << "asking " << it->first << " to stop" << std::endl;
 			it->second->stop(true);
 		}
 	}
@@ -175,15 +199,15 @@ void ThreadPool::stop()
 
 	for (Workers::iterator it = alive.begin(); it != alive.end(); ++it)
 	{
-		std::cout << "cancelling " << it->first << std::endl;
+		//std::cout << "cancelling " << it->first << std::endl;
 		it->second->cancel();
 	}
 
-	waitForTermination(alive, 1000);
+	waitForTermination(alive, 30000);
 
 	for (Workers::iterator it = alive.begin(); it != alive.end(); ++it)
 	{
-		std::cout << "killing " << it->first << std::endl;
+		//std::cout << "killing " << it->first << std::endl;
 		it->second->setCancelModeAsynchronous();
 		it->second->cancel();
 	}
@@ -203,5 +227,5 @@ void ThreadPool::workerEnded(WorkerThread* worker)
 	assert(it == _workers.end() || it->second == worker);
 	//if (it != _workers.end())
 	//	_workers.erase(it);
-	std::cout << "Worker " << key << " ended.";
+	//std::cout << "Worker " << key << " ended.";
 }

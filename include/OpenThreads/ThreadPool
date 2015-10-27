@@ -65,6 +65,9 @@ protected:
 	};
 
 private:
+	bool shouldStop();
+	
+private:
 	friend class ThreadPool;
 	void setPool(ThreadPool* pool);
 	ThreadPool* _pool;
