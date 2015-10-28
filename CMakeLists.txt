@@ -76,7 +76,7 @@ IF (CMAKE_COMPILER_IS_GNUCXX)
 	message("running cmake ${CMAKE_VERSION}")
 	# For g++ prior to 4.7 we must use -std=c++0x, -std=c++11 otherwise
 	# http://stackoverflow.com/a/14674646/948581
-	IF (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.7")
+	IF (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.7")
 		LIST(APPEND CMAKE_CXX_FLAGS "-std=c++0x")
 		message("using c++0x")
 	ELSE ()
