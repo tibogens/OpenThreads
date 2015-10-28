@@ -1,4 +1,4 @@
-# OpenThreads
+# OpenThreads [![Build Status](https://travis-ci.org/tibogens/OpenThreads.svg?branch=master)](https://travis-ci.org/tibogens/OpenThreads)
 
 *Note: this is a fork of the official OpenSceneGraph SVN repo at version 3.3.6. 
 It is not meant to be kept up-to-date, but OpenThreads is a very mature and
