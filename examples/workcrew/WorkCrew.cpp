@@ -99,20 +99,20 @@ protected:
 	
 	int status;
 
-	DPRINTF(("Created Thread %d\n", getProcessId()));
+	DPRINTF(("Created Thread %lu\n", getProcessId()));
 
 	//---------------------------------------------------------------------
 	// Block until all of the crew members are ready.
 	//
 	_bar->block(_crew->crewSize+1);
 
-	DPRINTF(("Reving Thread %d\n", getProcessId()));
+	DPRINTF(("Reving Thread %lu\n", getProcessId()));
 
 	//---------------------------------------------------------------------
 	// Lock the crew mutex
 	//
 	status = _mutex->lock();
-	DPRINTF(("Thread %d got lock\n", getProcessId()));
+	DPRINTF(("Thread %lu got lock\n", getProcessId()));
 	assert(status == 0); 
 
 	//---------------------------------------------------------------------
@@ -121,11 +121,11 @@ protected:
 	//
 	while(_crew->workCount == 0) {
 
-	    DPRINTF(("Thread %d waiting to go\n", getProcessId()));
+	    DPRINTF(("Thread %lu waiting to go\n", getProcessId()));
 	    status = _go->wait(_mutex);
 	    assert(status == 0); 
 
-	    DPRINTF(("Thread %d going\n", getProcessId()));
+	    DPRINTF(("Thread %lu going\n", getProcessId()));
 	}	
 
         //---------------------------------------------------------------------
@@ -140,7 +140,7 @@ protected:
 	// 
 	while(true) {
 
-	    DPRINTF(("Thread %d entered while loop.\n", getProcessId()));
+	    DPRINTF(("Thread %lu entered while loop.\n", getProcessId()));
 
 	    //-----------------------------------------------------------------
 	    // Lock the crew mutex
@@ -154,12 +154,12 @@ protected:
 	    //
 	    while(_crew->first == 0) {
 
-		DPRINTF(("Thread %d waiting for work\n", getProcessId()));
+		DPRINTF(("Thread %lu waiting for work\n", getProcessId()));
 		
 		status = _go->wait(_mutex);
 		assert(status == 0); 
 
-		DPRINTF(("Thread %d woke, %#lx, %d\n",
+		DPRINTF(("Thread %lu woke, %#lx, %ld\n",
 			 getProcessId(), _crew->first, _crew->workCount));
 	    }
 	    	   
@@ -172,7 +172,7 @@ protected:
 		_crew->last = 0;
 	    };
 
-	    DPRINTF(("Thread %d took, %#lx, leaves first %#lx, last %#lx\n",
+	    DPRINTF(("Thread %lu took, %#lx, leaves first %#lx, last %#lx\n",
 		   getProcessId(), _work, _crew->first, _crew->last));
 
 	    //-----------------------------------------------------------------
@@ -197,11 +197,11 @@ protected:
 
 	    --_crew->workCount;
 
-	    DPRINTF(("Thread %d decremented work count to %d\n",
+	    DPRINTF(("Thread %lu decremented work count to %d\n",
 		   getProcessId(), _crew->workCount));
 	    
 	    if(_crew->workCount <= 0) {
-		DPRINTF(("Thread %d done.\n", getProcessId()));
+		DPRINTF(("Thread %lu done.\n", getProcessId()));
 	    
 		//-------------------------------------------------------------
 		// Signal that we have finished our job.
