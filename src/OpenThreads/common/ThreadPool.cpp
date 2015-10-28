@@ -19,6 +19,37 @@
 using namespace OpenThreads;
 
 
+TaskContext::TaskContext()
+	: _pool(nullptr), _worker(nullptr)
+{
+}
+
+TaskContext::TaskContext(ThreadPool* pool, WorkerThread* worker)
+	: _pool(pool), _worker(worker)
+{
+	assert(pool);
+	assert(worker);
+}
+
+bool TaskContext::shouldStop(bool isSafeCancelPoint)
+{
+	assert(_worker);
+	bool ret = (_worker->_flags & WorkerThread::STOPPING) == WorkerThread::STOPPING;
+	if (ret && isSafeCancelPoint)
+		_worker->testCancel();
+	return ret;
+}
+
+Task::Task()
+{
+}
+
+Task::~Task()
+{
+}
+
+
+
 WorkerThread::WorkerThread()
 	: Thread(), _pool(nullptr), _flags(0)
 {
@@ -36,6 +67,7 @@ void WorkerThread::setPool(ThreadPool* pool)
 	assert(!_pool);
 	assert(pool);
 	_pool = pool;
+	_context = TaskContext(pool, this);
 }
 
 void WorkerThread::run()
@@ -85,7 +117,12 @@ void WorkerThread::run()
 	}
 }
 
-void WorkerThread::queue(void* task)
+void WorkerThread::executeTask(Task* task)
+{
+	task->execute(_context);
+}
+
+void WorkerThread::queue(Task* task)
 {
 	ScopedLock<Mutex> slock(_mutex);
 	_tasks.push_back(task);
@@ -127,10 +164,11 @@ bool WorkerThread::shouldStop()
 
 
 
-ThreadPool::ThreadPool()
-	: _stopping(false)
+ThreadPool::ThreadPool(DispatchOp* defaultDispatch)
+	: _stopping(false), _defaultDispatch(defaultDispatch)
 {
-
+	if (!_defaultDispatch)
+		_defaultDispatch = std::unique_ptr<DispatchOp>(new DispatchDummy);
 }
 
 ThreadPool::~ThreadPool()
@@ -179,41 +217,89 @@ void ThreadPool::waitForTermination(Workers& workers, unsigned int timeout)
 	}
 }
 
-void ThreadPool::stop()
+int ThreadPool::stop(bool finishAllTasks, unsigned int politeTimeout, unsigned int overallTimeout, bool fatality)
 {
+	if (overallTimeout < politeTimeout)
+		overallTimeout = politeTimeout;
+
 	Workers all, alive;
-	
 	{
 		ScopedLock<Mutex> slock(_mutex);
 		_stopping = true;
 		alive.swap(_workers);
 		all = alive;
+	}
+
+#define GOTO_END(m) { method = m; break; }
+
+	int method = -1;
+	while (1)
+	{
+		if (alive.empty())
+			GOTO_END(1);
+
+		if (politeTimeout > 0)
+		{
+			for (Workers::iterator it = alive.begin(); it != alive.end(); ++it)
+			{
+				//std::cout << "asking " << it->first << " to stop" << std::endl;
+				it->second->stop(finishAllTasks);
+			}
+			waitForTermination(alive, politeTimeout);
+		}
+
+		if (alive.empty())
+			GOTO_END(1);
+
+		unsigned int aggressiveTimeout = overallTimeout - politeTimeout;
+		if (aggressiveTimeout > 0)
+		{
+			for (Workers::iterator it = alive.begin(); it != alive.end(); ++it)
+			{
+				//std::cout << "cancelling " << it->first << std::endl;
+				it->second->cancel();
+			}
+
+			waitForTermination(alive, aggressiveTimeout);
+		}
+
+		if (alive.empty())
+			GOTO_END(2);
+
+		bool usedMethod3 = false;
 		for (Workers::iterator it = alive.begin(); it != alive.end(); ++it)
 		{
-			//std::cout << "asking " << it->first << " to stop" << std::endl;
-			it->second->stop(true);
+			if (fatality)
+			{
+				//std::cout << "killing thread " << it->first << std::endl;
+				it->second->setCancelModeAsynchronous();
+				it->second->cancel();
+				usedMethod3 = true;
+			}
+			else
+			{
+				//std::cout << "thead " << it->first << " still alive after stop()" << std::endl;
+				Workers::iterator skipJoin = all.find(it->first);
+				if (skipJoin != all.end())
+					all.erase(skipJoin);
+			}
 		}
+		GOTO_END(usedMethod3 ? 3 : 0)
 	}
+	assert(method >= 0);
 
-	waitForTermination(alive, 3000);
-
-	for (Workers::iterator it = alive.begin(); it != alive.end(); ++it)
-	{
-		//std::cout << "cancelling " << it->first << std::endl;
-		it->second->cancel();
-	}
-
-	waitForTermination(alive, 30000);
-
-	for (Workers::iterator it = alive.begin(); it != alive.end(); ++it)
-	{
-		//std::cout << "killing " << it->first << std::endl;
-		it->second->setCancelModeAsynchronous();
-		it->second->cancel();
-	}
-
+	// Join all threads (except those that we could not kill anyway)
 	for (Workers::iterator it = all.begin(); it != all.end(); ++it)
 		it->second->join();
+
+	if (method == 0)
+	{
+		ScopedLock<Mutex> slock(_mutex);
+		_stopping = false;
+		_workers = alive;
+	}
+
+	return method;
 }
 
 void ThreadPool::workerEnded(WorkerThread* worker)
@@ -225,7 +311,49 @@ void ThreadPool::workerEnded(WorkerThread* worker)
 
 	Workers::iterator it = _workers.find(key);
 	assert(it == _workers.end() || it->second == worker);
-	//if (it != _workers.end())
-	//	_workers.erase(it);
+	if (it != _workers.end())
+		_workers.erase(it);
 	//std::cout << "Worker " << key << " ended.";
+}
+
+void ThreadPool::submit(Task* task, DispatchOp* op)
+{
+	ScopedLock<Mutex> slock(_mutex);
+	if (op == nullptr) _defaultDispatch->dispatch(_workers, task);
+	else op->dispatch(_workers, task);
+}
+
+ThreadPool::DispatchRoundRobin::DispatchRoundRobin()
+	: _lastSize(0), _lastHash(0)
+{
+}
+
+bool ThreadPool::DispatchRoundRobin::dispatch(const Workers& workers, Task* task)
+{
+	update(workers);
+	if (_it == workers.end())
+		return false;
+
+	_it->second->queue(task);
+	++_it;
+	return true;
+}
+
+unsigned int ThreadPool::DispatchRoundRobin::hash(const Workers& workers)
+{
+	unsigned int sum = 0;
+	for (Workers::const_iterator it = workers.begin(); it != workers.end(); ++it)
+		sum ^= (unsigned int)it->first;
+	return sum;
+}
+
+void ThreadPool::DispatchRoundRobin::update(const Workers& workers)
+{
+	unsigned int curHash = hash(workers);
+	if (_lastSize == 0 || _lastSize != workers.size() || _lastHash == 0 || _lastHash != curHash || _it == workers.end())
+	{
+		_lastHash = curHash;
+		_lastSize = workers.size();
+		_it = workers.begin();
+	}
 }

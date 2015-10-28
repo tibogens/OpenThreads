@@ -29,118 +29,101 @@
 #include <conio.h>
 #endif
 
-struct Task
+class Task : public OpenThreads::Task
 {
-	int num;
-};
+protected:
+	void execute(OpenThreads::TaskContext& ctxt)
+	{
+		std::cout << "Running task " << num << std::endl;
+		int numSteps = 10, executed = 0;
+		unsigned int elapsed = 0, timeout = 5000000;
+		unsigned int timeoutStep = timeout / numSteps;
+		for (int i=0;i<numSteps;++i)
+		{
+			OpenThreads::Thread::microSleep(timeoutStep);
+			++executed;
+			if (ctxt.shouldStop())
+				break;
+		}
+		
+		std::cout << "End of task" << num;
+		if (executed == numSteps)
+			std::cout << ", ran all steps";
+		else
+			std::cout << ", ran " << executed << "/" << numSteps << " steps";
+		std::cout << std::endl;
 
-class Worker : public OpenThreads::WorkerThread
-{
-public:
-	void executeTask(void* t)
-	{
-		Task* task = static_cast<Task*>(t);
-		std::cout << "Runing task " << task->num << std::endl;
-		OpenThreads::Thread::microSleep(1000000);
-		std::cout << "End of task " << task->num << std::endl;
-		if (task->num == 0)
-			queue(task);
+		//if (num == 0)
+		//	ctxt.getWorker()->queue(this);
+
 		OpenThreads::ScopedLock<OpenThreads::Mutex> slock(_s_mutex);
-		++_s_numTasksDone;
+		_s_done.push_back(num);
 	}
-	static int numTasksDone() 
+public:
+	int num;
+	static int numDone()
 	{
 		OpenThreads::ScopedLock<OpenThreads::Mutex> slock(_s_mutex);
-		return _s_numTasksDone;
+		return _s_done.size();
 	}
 private:
-	static int _s_numTasksDone;
+	static std::list<int> _s_done;
 	static OpenThreads::Mutex _s_mutex;
 };
-int Worker::_s_numTasksDone(0);
-OpenThreads::Mutex Worker::_s_mutex;
-typedef std::unique_ptr<Worker> WorkerPtr;
+std::list<int> Task::_s_done;
+OpenThreads::Mutex Task::_s_mutex;
+typedef std::vector<Task> Tasks;
+
+
+typedef std::unique_ptr<OpenThreads::WorkerThread> WorkerPtr;
 typedef std::vector<WorkerPtr> Workers;
 
-class Manager : public OpenThreads::WorkerThread
+void createTasks(Tasks& tasks, int num = 10)
 {
-public:
-	Manager(Workers& workers) : _workers(workers), _i(0)
+	tasks.resize(num);
+	for (int i = 0; i < num; ++i)
+		tasks[i].num = i;
+}
+
+void submit(Tasks& tasks, OpenThreads::ThreadPool& pool, unsigned int period = 0)
+{
+	std::list<Task*> pending;
+	for (Tasks::iterator it = tasks.begin(); it != tasks.end(); ++it)
+		pending.push_back(&*it);
+
+	std::cout << "Created " << tasks.size() << " tasks" << std::endl;
+
+	while (!pending.empty())
 	{
+		pool.submit(pending.front());
+		pending.pop_front();
+		OpenThreads::Thread::microSleep(period*1000);
 	}
 
-	void init()
-	{
-		_tasks.resize(10);
-		for (Tasks::iterator it = _tasks.begin(); it != _tasks.end(); ++it)
-			it->num = std::distance(_tasks.begin(), it);
-		std::cout << "Created " << _tasks.size() << " tasks" << std::endl;
-	}
-
-	void executeTask(void* t)
-	{
-		if (_i >= _tasks.size())
-			return;
-
-		size_t num = std::min(_tasks.size() - _i, (size_t)5);
-
-		std::cout << "Manager sends " << num << " tasks to workers ";
-		for (size_t i = 0; i < num; ++i)
-		{
-			if (i > 0)
-				std::cout << ", ";
-			size_t tidx = _i + i;
-			assert(tidx < _tasks.size());
-			size_t widx = tidx % _workers.size();
-			std::cout << widx;
-			_workers[widx]->queue(&_tasks[tidx]);
-		}
-		std::cout << std::endl;
-		_i += num;
-
-		if (_i >= _tasks.size())
-		{
-			std::cout << "Manager's job done" << std::endl;
-			stop(false);
-		}
-	}
-
-private:
-	Workers& _workers;
-	size_t _i;
-	typedef std::vector<Task> Tasks;
-	Tasks _tasks;
-};
-typedef std::unique_ptr<Manager> ManagerPtr;
+	std::cout << "Dispatched all tasks for this sample" << std::endl;
+}
 
 int main(int argc, char **argv) 
 {
+	// Prepare the thread pool
+	
+	// Workers first (we own them)
 	Workers workers;
-
 	for (int i = 0; i < OpenThreads::GetNumberOfProcessors(); ++i)
-		workers.push_back(WorkerPtr(new Worker));
-
-
-	OpenThreads::ThreadPool pool;
-
-	// Let the workers arrive to work
+		workers.push_back(WorkerPtr(new OpenThreads::WorkerThread));
+	
+	// Then the pool, with an appropriate dispatcher
+	OpenThreads::ThreadPool pool(new OpenThreads::ThreadPool::DispatchRoundRobin);
+	// Each call to add() starts the worker.
 	for (Workers::iterator it = workers.begin(); it != workers.end(); ++it)
 		pool.add(it->get());
+	
 	std::cout << "Spawned " << workers.size() << " threads." << std::endl;
 
-	// Manager always arrives late
-	OpenThreads::Thread::microSleep(100000);
-	ManagerPtr manager(new Manager(workers));
-	pool.add(manager.get());
+	Tasks tasks;
+	createTasks(tasks);
+	submit(tasks, pool);
 
-	OpenThreads::Thread::microSleep(100000);
-
-	while (manager->isRunning())
-	{
-		manager->queue(&pool);
-		OpenThreads::Thread::microSleep(50000);
-	}
-	
 	std::cout << "Press any key to terminate" << std::endl;
 
 #ifdef _WIN32
@@ -150,8 +133,19 @@ int main(int argc, char **argv)
 #endif
 
 	std::cout << "Stopping all threads ..." << std::endl;
-	pool.stop();
-	std::cout << "Done." << std::endl;
+	int stopRet = pool.stop();
 
-	std::cout << "Ran " << Worker::numTasksDone() << " tasks" << std::endl;
+	if (stopRet == 0)
+	{
+		std::cout << "WARNING: killing remaining threads ..." << std::endl;
+		stopRet = pool.stop(false, 0, 1000, true);
+		std::cout << "Done (return code " << stopRet << ")." << std::endl;
+		assert(pool.stop(false, 0, 0, false) == 1);
+	}
+	else
+	{
+		std::cout << "Done (return code " << stopRet << ")." << std::endl;
+	}
+
+	std::cout << "Ran " << Task::numDone() << " tasks" << std::endl;
 }
