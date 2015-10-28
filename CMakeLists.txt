@@ -72,7 +72,7 @@ ENDIF("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 
 ################################################################################
 # Enable the C++11 features for compilers that need a special flag
-IF (CMAKE_COMPILER_IS_GNUCXX)
+IF (NOT MSVC)
 	message("running cmake ${CMAKE_VERSION}")
 	# For g++ prior to 4.7 we must use -std=c++0x, -std=c++11 otherwise
 	# http://stackoverflow.com/a/14674646/948581
