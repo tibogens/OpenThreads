@@ -15,6 +15,9 @@
 #include <string>
 #include <stdio.h>
 
+#if _WIN32
+#pragma warning (disable: 4996)
+#endif
 
 /* These functions expect OPENTHREADS_MAJOR_VERSION,
  * OPENTHREADS_MINOR_VERSION, OPENTHREADS_PATCH_VERSION, and
