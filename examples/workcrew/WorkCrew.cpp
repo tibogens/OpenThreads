@@ -159,7 +159,7 @@ protected:
 		status = _go->wait(_mutex);
 		assert(status == 0); 
 
-		DPRINTF(("Thread %lu woke, %#lx, %ld\n",
+		DPRINTF(("Thread %lu woke, %p, %ld\n",
 			 getProcessId(), _crew->first, _crew->workCount));
 	    }
 	    	   
@@ -172,7 +172,7 @@ protected:
 		_crew->last = 0;
 	    };
 
-	    DPRINTF(("Thread %lu took, %#lx, leaves first %#lx, last %#lx\n",
+	    DPRINTF(("Thread %lu took, %p, leaves first %p, last %p\n",
 		   getProcessId(), _work, _crew->first, _crew->last));
 
 	    //-----------------------------------------------------------------
@@ -197,7 +197,7 @@ protected:
 
 	    --_crew->workCount;
 
-	    DPRINTF(("Thread %lu decremented work count to %d\n",
+	    DPRINTF(("Thread %lu decremented work count to %ld\n",
 		   getProcessId(), _crew->workCount));
 	    
 	    if(_crew->workCount <= 0) {
@@ -367,7 +367,7 @@ int crew_start(Crew *crew) {
 
     while(crew->workCount > 0) {
 
-	DPRINTF(("Work Count: %d\n", crew->workCount));
+	DPRINTF(("Work Count: %ld\n", crew->workCount));
 	status = crew->done.wait(&(crew->mutex));
 	assert(status == 0);
     }
