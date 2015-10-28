@@ -72,8 +72,16 @@ ENDIF("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 
 ################################################################################
 # Enable the C++11 features for compilers that need a special flag
-IF (NOT MSVC)
-	LIST(APPEND CMAKE_CXX_FLAGS "-std=c++11")
+IF (CMAKE_COMPILER_IS_GNUCXX)
+	# For g++ prior to 4.7 we must use -std=c++0x, -std=c++11 otherwise
+	# http://stackoverflow.com/a/14674646/948581
+	IF (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.7")
+		LIST(APPEND CMAKE_CXX_FLAGS "-std=c++0x")
+		message("using c++0x")
+	ELSE ()
+		LIST(APPEND CMAKE_CXX_FLAGS "-std=c++11")
+		message("using c++11")
+	ENDIF ()
 ENDIF ()
 
 
