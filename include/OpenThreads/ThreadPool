@@ -1,5 +1,8 @@
 /* -*-c++-*- OpenThreads library, Copyright (C) 2002 - 2007  The Open Thread Group
  *
+ * This file is Copyright (C) 2015 Thibault Genessay
+ * https://github.com/tibogens/OpenThreads
+ *
  * This library is open source and may be redistributed and/or modified under
  * the terms of the OpenSceneGraph Public License (OSGPL) version 0.0 or
  * (at your option) any later version.  The full license is in LICENSE file

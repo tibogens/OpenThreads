@@ -9,3 +9,7 @@ Boris Bralo......Developed the Win32 implementation
 
 The numerous developers who contribute on a daily basis to the design,
 testing, and general discussion surrounding OpenThreads.  
+
+This Git repo (https://github.com/tibogens/OpenThreads) is a fork
+of the original authors' code at version 3.3.6 from the OpenSceneGraph 
+project, with only a few (non-intrusive) additions.
