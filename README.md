@@ -4,6 +4,10 @@
 It is not meant to be kept up-to-date, but OpenThreads is a very mature and
 robust library and does not change often.*
 
+*Note2: this fork is now being modified for my needs. While changes should
+be non-intrusive (i.e. only optional additions), you are probably better
+off using the 3.3.6 release rather than the master branch.*
+
 This library is intended to provide a minimal & complete Object-Oriented (OO) 
 thread interface for C++ programmers.  It is loosely modeled on the Java thread
 API, and the POSIX Threads standards.  The architecture of the library is 
