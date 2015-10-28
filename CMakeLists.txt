@@ -70,6 +70,12 @@ ENDIF("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 
 
 
+################################################################################
+# Enable the C++11 features for compilers that need a special flag
+IF (NOT MSVC)
+	LIST(APPEND CMAKE_CXX_FLAGS "-std=c++11")
+ENDIF ()
+
 
 ###############################################################################
 # This is for an advanced option to give aggressive warnings 
@@ -154,7 +160,6 @@ IF(APPLE)
         ENDIF(EXISTS /Developer/SDKs/10.5.sdk)
     ENDIF(NOT OPENTHREADS_CONFIG_HAS_BEEN_RUN_BEFORE)
 ENDIF(APPLE)
-
 
 
 ################################################################################

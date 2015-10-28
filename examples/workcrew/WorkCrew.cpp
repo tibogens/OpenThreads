@@ -408,7 +408,7 @@ int main (int argc, char **argv) {
     assert(status == 0);
 
 	std::list<WorkerThread *> late_workers;
-	for (auto& it = workers.begin(); it != workers.end(); ++it)
+	for (auto it = workers.begin(); it != workers.end(); ++it)
 		if ((*it)->isRunning()) { late_workers.push_back(*it); (*it)->cancel(); }
 			
 #ifdef _WIN32
@@ -418,13 +418,13 @@ int main (int argc, char **argv) {
 	while (!late_workers.empty() && (GetTickCount() - wait_start_tick) < 1000) {
 
 		OpenThreads::Thread::microSleep(100000);
-		for (auto& it = late_workers.begin(); it != late_workers.end();)
+		for (auto it = late_workers.begin(); it != late_workers.end();)
 			if (!(*it)->isRunning())
 				it = late_workers.erase(it);
 			else
 				++it;
 	}
-	for (auto& it = late_workers.begin(); it != late_workers.end(); ++it) {
+	for (auto it = late_workers.begin(); it != late_workers.end(); ++it) {
 		printf("Thread %d deadlocked? Killing it.\n", (*it)->getThreadId());
 		(*it)->setCancelModeAsynchronous();
 		(*it)->cancel();
