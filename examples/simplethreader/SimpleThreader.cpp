@@ -29,6 +29,7 @@
 #include <cstdlib>
 
 #ifdef _WIN32
+#pragma warning (disable: 4996)
 #include <process.h>
 #define getpid() _getpid()
 #else
@@ -101,7 +102,7 @@ public:
         notifyObserversMessage(getThreadId(), "This is a thread message.");
 		notifyObserversMessage(getThreadId(), tmp);
 	
-        register int i;
+        int i;
         for (i=0; i<_numElts; ++i) {
             _dataPtr[i] = getThreadId();
         }
@@ -163,7 +164,7 @@ int main(int argc, char **argv) {
     GLOBAL_NUM_THREADS = NUM_THREADS + 1;
     
     MyThreadObserver observer;
-    register int i;
+    int i;
 
     int *dataArray = new int[NUM_ELTS];
     std::vector<MyThread *> threads;
@@ -206,7 +207,7 @@ int main(int argc, char **argv) {
 
     std::cout << "Data Array: " << std::endl;
     for(i=0; i < NUM_THREADS; ++i) {
-        register int j;
+        int j;
         for (j=0; j<NUM_ELTS/NUM_THREADS; ++j) {
             std::cout << dataArray[(i*NUM_ELTS/NUM_THREADS)+j] << " ";
         }

@@ -28,6 +28,7 @@
 #include <unistd.h>
 extern int errno;
 #else
+#pragma warning (disable: 4996)
 #include <Windows.h>
 #endif
 
@@ -235,13 +236,13 @@ private:
 	// Just take the numbers and add them
 	// 
 	float result = 0;
-	register unsigned int i, j;
+	unsigned int i, j;
 	float total;
 	for(i=0; i<_work->datapts.size();++i) {
 	    for(total=0, j=0; j<10000000; ++j) {
 #if defined(WIN32) && !defined(__CYGWIN__)
-		total += double(rand()) / double(RAND_MAX);
-		total -= double(rand()) / double(RAND_MAX);
+		total += (float)(double(rand()) / double(RAND_MAX));
+		total -= (float)(double(rand()) / double(RAND_MAX));
 #else
 		total += drand48();
 		total -= drand48();
@@ -336,7 +337,7 @@ int crew_start(Crew *crew) {
     //-------------------------------------------------------------------------
     //  Create some work data.
     //
-    register int i;
+    int i;
     for(i=0; i<4; ++i) {
 	WorkData *work = new WorkData;
 	work->datapts.push_back(10.0);
