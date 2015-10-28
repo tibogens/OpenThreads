@@ -8,15 +8,6 @@ os:
   - linux
 #  - osx
   
-before_script:
-  - wget https://github.com/wxWidgets/wxWidgets/archive/WX_3_0_2.tar.gz -O /tmp/WX_3_0_2.tar.gz
-  - cd /tmp
-  - tar -xvzf WX_3_0_2.tar.gz > /dev/null 2>&1
-  - cd -
-  - cp -rn /tmp/wxWidgets-WX_3_0_2/* .
-  - cd build/cmake
-  - python conv_bakefile_list.py > files.cmake
-  - python gen_setups.py
   
 script:
   - cd $TRAVIS_BUILD_DIR
@@ -26,46 +17,3 @@ script:
   - cmake ..
   - make
   
-
-# Original wxWidgets .travis.yml file below
-# (for reference)
-# -------------------------------------------
-
-# # This is the control file for Travis continuous integration system.
-# #
-# # It is used automatically for the repositories on Github if it's found in the
-# # root directory of the project.
-# language: cpp
-
-# compiler: gcc
-
-# branches:
-    # only:
-        # - master
-
-# notifications:
-    # email:
-        # recipients:
-            # - vadim@wxwidgets.org
-        # on_success: change
-        # on_failure: change
-
-# before_install:
-    # - sudo apt-get install -y libcppunit-dev
-
-# env:
-    # - wxCONFIGURE_FLAGS=
-    # - wxCONFIGURE_FLAGS="--disable-shared"
-    # - wxCONFIGURE_FLAGS="--disable-precomp-headers --enable-monolithic"
-    # - wxCONFIGURE_FLAGS="--enable-stl" CXXFLAGS=-std=c++0x
-
-# script:
-    # - ./configure --disable-optimise $wxCONFIGURE_FLAGS
-    # - make
-    # - make -C tests
-    # - pushd tests
-    # - ./test -t
-    # - popd
-    # - make samples
-    # - sudo make install
-    # - make -C samples/minimal -f makefile.unx
