@@ -22,6 +22,7 @@
 #include <vector>
 #include <cassert>
 #include <cerrno>
+#include <string.h>
 
 #ifndef _WIN32
 #include <unistd.h>

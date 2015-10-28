@@ -127,6 +127,7 @@ ELSE()
 
     TARGET_LINK_LIBRARIES(${LIB_NAME}
         ${CMAKE_THREAD_LIBS_INIT}
+	rt
     )
 
     # Since we're building different platforms binaries in 
