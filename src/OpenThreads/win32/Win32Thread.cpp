@@ -660,7 +660,7 @@ int Thread::microSleep(unsigned int microsec)
         return -1;
     }
 
-    // Wait for the timer.
+	// Wait for the timer.
     if (WaitForSingleObject(sleepTimer.get(), INFINITE) != WAIT_OBJECT_0)
     {
         return -1;
@@ -674,6 +674,49 @@ unsigned int Thread::getTickCount()
 	return GetTickCount();
 }
 
+
+int Thread::interruptibleWait(unsigned int microsec)
+{
+#if _WIN32_WINNT < 0x0400 // simulate
+	::Sleep(microsec / 1000);
+	return 0;
+#else
+	HandleHolder sleepTimer(CreateWaitableTimer(NULL, TRUE, NULL));
+
+	if (!sleepTimer)
+		return -1;
+
+	LARGE_INTEGER t;
+
+	t.QuadPart = -(LONGLONG)microsec * 10; // in 100ns units
+	// negative sign means relative,
+
+	if (!SetWaitableTimer(sleepTimer.get(), &t, 0, NULL, NULL, 0))
+	{
+		return -1;
+	}
+
+	// Pull in private data to get to the cancel event
+	Win32ThreadPrivateData *pd = static_cast<Win32ThreadPrivateData *> (_prvData);
+	
+	// Wait until the timer expires or the cancel event is set
+	HANDLE handles[2] = { sleepTimer.get(), pd->cancelEvent.get() };
+	DWORD res = ::WaitForMultipleObjects(2, handles, false, INFINITE);
+	switch (res)
+	{
+	case WAIT_OBJECT_0:
+		// Timer expired
+		return 0;
+	case WAIT_OBJECT_0 + 1:
+		// cancel event set
+		::CancelWaitableTimer(sleepTimer.get());
+		return testCancel();
+	default:
+		return -1;
+	}
+		
+#endif
+}
 
 //-----------------------------------------------------------------------------
 //

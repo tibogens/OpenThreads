@@ -342,6 +342,20 @@ public:
       */
     int setProcessorAffinity( unsigned int cpunum );
 
+	/** Waits on the cancel event until the timeout specified
+	  * in microseconds. If the cancel event is set, testCancel() is
+	  * called.
+	  * Win32 only. On other implementations this is equivalent
+	  * to microSleep() (FIXME).
+	  */
+	int interruptibleWait( unsigned int microsec )
+#ifdef _WIN32
+	;
+#else
+		{ return microSleep(microsec); }
+#endif
+
+
     /** microSleep method, equivilant to the posix usleep(microsec).
       *  This is not strictly thread API but is used
       * so often with threads. It's basically UNIX usleep. Parameter is
@@ -349,7 +363,7 @@ public:
       * succes, non-zero on failure (UNIX errno or GetLastError() will give
       * detailed description.
       */
-    static int microSleep( unsigned int microsec);
+    static int microSleep( unsigned int microsec );
 
 	/** getTickCount(), returns the millisecs since boot
 	  * (Not strictly thread API, see remark in microSleep()
