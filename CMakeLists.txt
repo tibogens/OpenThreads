@@ -52,6 +52,11 @@ ELSE (DYNAMIC_OPENTHREADS)
     SET(OPENTHREADS_USER_DEFINED_DYNAMIC_OR_STATIC "STATIC")
 ENDIF(DYNAMIC_OPENTHREADS)
 
+option(USE_THREAD_POOL "Compile the thread worker pool (alpha addition)" OFF)
+if (USE_THREAD_POOL)
+	set(_OPENTHREADS_USE_THREAD_POOL TRUE)
+endif()
+
 # Use our modified version of FindThreads.cmake which has Sproc hacks.
 FIND_PACKAGE(Threads)
 

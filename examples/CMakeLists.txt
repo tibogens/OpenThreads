@@ -1,3 +1,5 @@
 add_subdirectory(simplethreader)
 add_subdirectory(workcrew)
-add_subdirectory(pool)
+if (USE_THREAD_POOL)
+	add_subdirectory(pool)
+endif()

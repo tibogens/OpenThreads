@@ -60,15 +60,18 @@ SET(OpenThreads_PUBLIC_HEADERS
     ${HEADER_PATH}/ReentrantMutex
     ${HEADER_PATH}/ScopedLock
     ${HEADER_PATH}/Thread
-    ${HEADER_PATH}/ThreadPool
     ${OPENTHREADS_VERSION_HEADER}
     ${OPENTHREADS_CONFIG_HEADER}
 )
 SET(OpenThreads_COMMON_SOURCE
 	${CMAKE_CURRENT_SOURCE_DIR}/common/Atomic.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/common/ThreadPool.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/common/Version.cpp
 )
+
+if (USE_THREAD_POOL)
+	list(APPEND OpenThreads_PUBLIC_HEADERS ${HEADER_PATH}/ThreadPool)
+	list(APPEND OpenThreads_COMMON_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/common/ThreadPool.cpp)
+endif()
 
 IF(NOT ANDROID)
 # Use our modified version of FindThreads.cmake which has Sproc hacks.
