@@ -411,7 +411,7 @@ int main (int argc, char **argv) {
     assert(status == 0);
 
 	std::list<WorkerThread *> late_workers;
-	for (auto it = workers.begin(); it != workers.end(); ++it)
+	for (std::vector<WorkerThread *>::iterator it = workers.begin(); it != workers.end(); ++it)
 		if ((*it)->isRunning()) { late_workers.push_back(*it); (*it)->cancel(); }
 			
 #ifdef _WIN32
