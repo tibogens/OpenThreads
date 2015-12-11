@@ -57,10 +57,16 @@ if (USE_THREAD_POOL)
 	set(_OPENTHREADS_USE_THREAD_POOL TRUE)
 endif()
 
+option(BUILD_SAMPLES "Set to ON to build the samples." ON)
+
 # Use our modified version of FindThreads.cmake which has Sproc hacks.
 FIND_PACKAGE(Threads)
 
-SUBDIRS(src/OpenThreads examples)
+add_subdirectory(src/OpenThreads)
+
+if (BUILD_SAMPLES)
+	add_subdirectory(examples)
+endif ()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
