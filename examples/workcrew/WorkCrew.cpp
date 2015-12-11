@@ -23,6 +23,7 @@
 #include <cassert>
 #include <cerrno>
 #include <string.h>
+#include <stdlib.h>
 
 #ifndef _WIN32
 #include <unistd.h>
